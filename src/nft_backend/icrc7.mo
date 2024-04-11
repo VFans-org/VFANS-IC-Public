@@ -248,7 +248,7 @@ shared actor class ICRC7NFT() = Self {
 
   func build_binding_body(user_id : Text, ic_account_id : Text, op : Text) : Text {
     let body = user_id # "," #ic_account_id # "," #op;
-    let signStr = body # "2ce18dcb34247882fd5b402ce11790ce6d743b0c11b091cb2e7ff2b27ee2acb1";
+    let signStr = body # "your sign key";
     let sign = Sha256.sha256_with_text(signStr);
     return "{\"user_id\":\"" # user_id # "\"" # ",\"ic_account_id\":\"" # ic_account_id # "\",\"op\":\"" # op # "\"" # ",\"sign\":\"" #debug_show (sign) # "\"}";
   };
@@ -262,7 +262,7 @@ shared actor class ICRC7NFT() = Self {
     if (Text.size(list) == 0) {
       return "";
     };
-    let signStr = list # "2ce18dcb34247882fd5b402ce11790ce6d743b0c11b091cb2e7ff2b27ee2acb1";
+    let signStr = list # "you sign key";
     let sign = Sha256.sha256_with_text(signStr);
 
     return "{\"ic_account_id_list\":\"" # list # "\"" # ",\"sign\":\"" #debug_show (sign) # "\"}"
@@ -270,16 +270,7 @@ shared actor class ICRC7NFT() = Self {
   };
 
   func test_build_query_body() : Text {
-    //{
-    //"ic_account_id_list":
-    //  "2ce18dcb34247882fd5b402ce11790ce6d743b0c11b091cb2e7ff2b27ee2acb1,3aa18dcb34247882fd5b402ce11790ce6d743b0c11b091cb2e7ff2b27ee2acb1"
-    //}
-
-    let signStr = "testtesttest,testtest2" # "2ce18dcb34247882fd5b402ce11790ce6d743b0c11b091cb2e7ff2b27ee2acb1";
-    let sign = Sha256.sha256_with_text(signStr);
-
-    return "{\"ic_account_id_list\":\"" # "testtesttest,testtest2" # "\"" # ",\"sign\":\"" #debug_show (sign) # "\"}"
-
+    renturn "";
   };
 
   //查询固定数量的NFT ，每次查询指针后移
@@ -498,9 +489,8 @@ shared actor class ICRC7NFT() = Self {
 
   public func do_send_post(body : Text, uri : Text) : async Text {
 
-    // let url = "https://api-dev.vfans.org/user/sbt-info";
-    let url = "https://api.vfans.org/user/" #uri;
-    let host = "api.vfans.org";
+    let url = "" #uri;
+    let host = "";
     Cycles.add<system>(230_850_258_000);
     let ic : HttpTypes.IC = actor ("aaaaa-aa");
     let http_response : HttpTypes.HttpResponsePayload = await ic.http_request(get_http_req(body, url, host));
