@@ -1,0 +1,8 @@
+dfx deploy  nft_backend --argument '(principal "rrkah-fqaaa-aaaaa-aaaaq-cai")' --network=ic --with-cycles=2000000000000
+
+dfx deploy  nft_frontend --network=ic --with-cycles=2000000000000
+
+
+
+
+dfx deploy  nft_backend --argument '(principal "rrkah-fqaaa-aaaaa-aaaaq-cai")' --network=ic --with-cycles=100000000000

@@ -1,0 +1,44 @@
+type TransformArgs = 
+ record {
+   context: blob;
+   response: HttpResponsePayload;
+ };
+type ICRC7NFT = 
+ service {
+   binding_vfans: (text, text) -> (text);
+   clean: () -> ();
+   deal_https_resp_test: (text, text) -> (text);
+   do_send_post: (text, text) -> (text);
+   getErrorLog: () -> (text) query;
+   getUpdate: (nat) -> (text) query;
+   get_version: () -> (text);
+   make_test: () -> ();
+   nft_count: () -> (nat) query;
+   queryNfts: (text) -> (text) query;
+   queryNfts2: (nat) -> (text) query;
+   query_balance: () -> (nat) query;
+   query_cycles_ledger: () -> (text) query;
+   query_one_time: () -> (text);
+   test_post: (text, text) -> (text);
+   test_query_one_time: () -> (text);
+   transform: (TransformArgs) -> (CanisterHttpResponsePayload) query;
+   whoami: () -> (principal);
+ };
+type HttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+type HttpHeader = 
+ record {
+   name: text;
+   value: text;
+ };
+type CanisterHttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+service : (principal) -> ICRC7NFT

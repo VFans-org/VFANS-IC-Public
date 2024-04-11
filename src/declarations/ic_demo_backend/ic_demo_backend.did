@@ -1,0 +1,52 @@
+type VFTParams = 
+ record {
+   ic_account_id: text;
+   reputation_point: text;
+   sbt_card_image: text;
+   sbt_card_number: text;
+   sbt_get_time: text;
+   sbt_membership_category: text;
+   user_id: text;
+   vft_count: text;
+   vft_info: text;
+ };
+type TransformArgs = 
+ record {
+   context: blob;
+   response: HttpResponsePayload;
+ };
+type ICRC7NFT = 
+ service {
+   clean: () -> ();
+   deal_https_resp_test: (text, text) -> (text);
+   do_send_post: (text) -> (text);
+   getErrorLog: () -> (text) query;
+   getSubNft2: () -> (nat) query;
+   getUpdate: (nat) -> (text) query;
+   greet: (text) -> (text) query;
+   make_test: () -> ();
+   mintICRC7: (VFTParams) -> (text);
+   queryNfts: (text) -> (text) query;
+   query_one_time: () -> (text);
+   switch_timer: (bool) -> () query;
+   transform: (TransformArgs) -> (CanisterHttpResponsePayload) query;
+   whoami: () -> (principal);
+ };
+type HttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+type HttpHeader = 
+ record {
+   name: text;
+   value: text;
+ };
+type CanisterHttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+service : (principal) -> ICRC7NFT

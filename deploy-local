@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "参数错误，请输入 dfx generate  或 all"
+    exit 1
+fi
+
+if [ $1 == "back" ]; then
+    dfx deploy nft_backend --argument '(principal "rrkah-fqaaa-aaaaa-aaaaq-cai")'
+elif [ $1 == "frontend" ]; then
+    dfx deploy nft_frontend
+elif [ $1 == "all" ]; then
+    dfx deploy nft_backend --argument '(principal "rrkah-fqaaa-aaaaa-aaaaq-cai")'
+    dfx deploy nft_frontend
+else
+    echo "参数错误，请输入 back、frontend 或 all"
+    exit 1
+fi

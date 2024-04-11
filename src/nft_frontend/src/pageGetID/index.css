@@ -1,0 +1,112 @@
+.page-getid :global(.nut-navbar) {
+    height: 44px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    background: none;
+}
+
+.page-getid :global(.nut-navbar-title) {
+    font-family: PingFang SC;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 22px;
+    letter-spacing: 0em;
+    text-align: left;
+    color: #fff;
+}
+
+.page-getid {
+    width: 100%;
+    width: 334px;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+
+    .getid-content {
+        margin-top: 10px;
+
+        .getid-block-box {
+            padding: 9px 19px;
+            display: flex;
+            justify-content: center;
+
+            flex-shrink: 0;
+            border-radius: 4px;
+            background: #F1E8FC;
+
+            .getid-block {
+                height: 136px;
+                display: flex;
+                justify-content: center;
+
+                flex-direction: column;
+
+                .getid-block-title {
+                    color: rgba(0, 0, 0, 0.85);
+
+                    font-family: "PingFang SC";
+                    font-size: 12px;
+                    font-style: normal;
+                    font-weight: 500;
+                    line-height: 24px;
+                }
+
+                .getid-block-txt {
+                    color: rgba(0, 0, 0, 0.85);
+                    font-family: "PingFang SC";
+                    font-size: 12px;
+                    font-style: normal;
+                    font-weight: 400;
+                    line-height: 24px;
+                }
+            }
+        }
+
+        .link-box {
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .link {
+                color: #9145F1;
+                font-family: "PingFang SC";
+                font-size: 12px;
+                font-style: normal;
+                font-weight: 400;
+                line-height: 24px;
+            }
+        }
+
+        .btn-box {
+            margin-top: 16px;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 96px;
+                height: 30px;
+                align-items: center;
+                flex-shrink: 0;
+                border-radius: 4px;
+                background: #9354E1;
+                color: var(--VFans-White, #FFF);
+                text-align: center;
+                font-family: "PingFang SC";
+                font-size: 14px;
+                font-style: normal;
+                font-weight: 400;
+                line-height: normal;
+            }
+
+        }
+    }
+}
