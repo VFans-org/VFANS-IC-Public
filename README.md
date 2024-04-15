@@ -1,12 +1,27 @@
 # VFANS-IC
 
-> - 基于IC的NFT 智能合约。通过outCall 同步NFT 信息。
-> - 支持通过Oauth2的授权方法获取用户IC链上身份并绑定vfans账户信息。
-> - NFT 永久且独立存在，不可伪造，包含用户在Vfans上的资产信息。不支持转让
-> - 通过定时功能每日更新NFT信息
-> - 提供了内置账单功能
-    >   - 可以实时查看当前cansiter的cycles余额
->   - 可以查看每日cycles消耗
+
+VFANS SBT is a smart contract that utilizes the ICRC-7 standard for NFTs. It's designed to store user asset information on the VFANS platform. This contract specifically disallows transfers of the NFTs, prioritizing the secure storage of user asset data on the blockchain.
+
+Key functionalities:
+
+1. Acquiring User Internet Identity via Oauth2 Authorization: This function enables the contract to retrieve relevant information from the user's authorized Internet Identity and link it to their VFANS account.
+
+2. Synchronizing SBT and VFANS Account Information: By leveraging Internet Computer Http Outcalls and scheduled tasks, the contract can periodically obtain user asset information from the VFANS platform and synchronize it with the SBT.
+
+3. Built-in Billing Functionality: This feature allows users to view their current canister's cycles balance and daily cycles consumption in real-time, facilitating management of their account resources.
+
+
+
+VFANS SBT 基于ICRC-7的NFT 智能合约, 包含用户在Vfans上的资产信息。 SBT不支持转让。 
+
+1. 通过Oauth2的授权方法获取用户Internet Identity, 从而绑定VFANS的off-chain账户信息。
+2. 通过 Internet Compter Http Outcalls 和定时任务功能，同步SBT和VFANS账户的信息。
+3. 提供了内置账单功能，可以实时查看当前cansiter的cycles余额和每日cycles消耗。
+
+
+
+
 
 ## 介绍
 
@@ -14,11 +29,12 @@
 
 - 铸币流程图
 
-  ![铸币流程](./images/mint_nft.png)
+![image](https://github.com/VFans-org/VFANS-IC-Public/assets/107297097/7473330a-a415-4386-bd40-4392a184d1ce)
+
 
   - 同步数据流程
 
-    ![同步NFT](./images/sync_nft.png)
+![image](https://github.com/VFans-org/VFANS-IC-Public/assets/107297097/1e4e366a-cb2a-40f6-96a6-1ee65a03d394)
 
 
 
