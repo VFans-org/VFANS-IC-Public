@@ -65,6 +65,7 @@ function Page() {
     }
 
     useEffect(() => {
+
         (async () => {
             const params = queryString.parse(location.search);
             let id = params.id;
@@ -106,10 +107,8 @@ function Page() {
             });
 
         })()
+
     }, [])
-
-
-
 
     return (
         <div className='show-container'>
@@ -117,15 +116,56 @@ function Page() {
                 back={<ArrowLeft color="rgba(0, 0, 0, 0.85)" />}
                 onBackClick={() => navigate(-1)}
             ></NavBar>
-            <div style={{
+            {pageData.sbt_membership_category == 'AIRDROP' && <div style={{
+                backgroundImage: `url(${imgkongtou})`
+            }} className='image-bg'>
+                <div className='image-box'>
+                    <div className='image-txt'>创世会员卡-空投卡</div>
+                    <div className='image-btn'>
+                        <Link to={process.env.DFX_MORE_VFT}>
+                            <span className='image-btn-link'>获取更多</span>
+                        </Link>
+                    </div>
+                </div>
+            </div>}
+            {pageData.sbt_membership_category == 'BATTERY' && <div style={{
                 backgroundImage: `url(${imgfadian})`
             }} className='image-bg'>
-                <div className='image-btn'>
-                    <Link to={process.env.DFX_MORE_VFT}>
-                        <span className='image-btn-link'>获取更多</span>
-                    </Link>
+                <div className='image-box'>
+                    <div className='image-txt'>创世会员卡-发电卡</div>
+                    <div className='image-btn'>
+                        <Link to={process.env.DFX_MORE_VFT}>
+                            <span className='image-btn-link'>获取更多</span>
+                        </Link>
+                    </div>
                 </div>
-            </div>
+            </div>}
+
+            {pageData.sbt_membership_category == 'LIGHTING' && <div style={{
+                backgroundImage: `url(${imgshandian})`
+            }} className='image-bg'>
+                <div className='image-box'>
+                    <div className='image-txt'>创世会员卡-闪电卡</div>
+                    <div className='image-btn'>
+                        <Link to={process.env.DFX_MORE_VFT}>
+                            <span className='image-btn-link'>获取更多</span>
+                        </Link>
+                    </div>
+                </div>
+            </div>}
+
+            {pageData.sbt_membership_category == 'THUNDER' && <div style={{
+                backgroundImage: `url(${imgleidian})`
+            }} className='image-bg'>
+                <div className='image-box'>
+                    <div className='image-txt'>创世会员卡-雷电卡</div>
+                    <div className='image-btn'>
+                        <Link to={process.env.DFX_MORE_VFT}>
+                            <span className='image-btn-link'>获取更多</span>
+                        </Link>
+                    </div>
+                </div>
+            </div>}
             <div className='content'>
                 <div className='input-label'>社区身份地址：</div>
                 <div className='input-box'>

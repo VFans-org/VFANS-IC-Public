@@ -81,11 +81,14 @@ function Page() {
 
     useEffect(() => {
         const encryptedData = params.u;
-        console.log('encryptedData', encryptedData)
-        const secretKey = 'vfansvfans';
-        const decryptedData = decryptData(encryptedData, secretKey);
-        console.log('decryptedData', decryptedData)
-        setSuid(decryptedData);
+        if(encryptedData && encryptedData!=''){
+            console.log('encryptedData', encryptedData)
+            const secretKey = 'vfansvfans';
+            const decryptedData = decryptData(encryptedData, secretKey);
+            console.log('decryptedData', decryptedData)
+            setSuid(decryptedData);
+        }
+        
     }, []);
 
 

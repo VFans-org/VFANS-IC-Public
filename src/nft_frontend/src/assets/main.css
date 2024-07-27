@@ -15,7 +15,7 @@
   --grey-800: #3f4043;
   --grey-900: #292a2e;
 
-  --text-color: var(--grey-900);
+
   --background-color: #fff;
   --primary: black;
   --secondary: #cdcdcd;
@@ -27,7 +27,7 @@
 
 :root {
   --nutui-navbar-background: #fff;
-}
+} 
 
 html,
 body {
@@ -280,7 +280,7 @@ header {
   justify-content: center;
 }
 
-.toast {
+/* .toast {
   -webkit-text-size-adjust: 100%;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
     Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji,
@@ -352,7 +352,7 @@ header {
 .toast span {
   font-family: inherit;
   color: inherit;
-}
+} */
 
 .close-button {
   -webkit-text-size-adjust: 100%;
@@ -435,26 +435,19 @@ header {
   display: none;
 }
 
+ 
+:root {
+  --nutui-navbar-background: #fff;
+  --nutui-navbar-margin-bottom:0;
+}
+
+a {
+  text-decoration: none;
+}
+.nut-navbar-left, .nut-navbar-right {
+  padding: 0 !important;;
+}
+
 #title {
   font-size: 14px;
-}
-
-:global(.nut-navbar) {
-  height: 44px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-
-  background: none;
-}
-
-.nut-navbar {
-  height: 44px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-
-  background: none;
 }

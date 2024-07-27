@@ -1,10 +1,10 @@
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
-// import Nat16 "mo:base/Nat16";
-// import Nat32 "mo:base/Nat32";
+import Nat16 "mo:base/Nat16";
+import Nat32 "mo:base/Nat32";
 import Nat64 "mo:base/Nat64";
 import List "mo:base/List";
-// import Array "mo:base/Array";
+import Array "mo:base/Array";
 import Option "mo:base/Option";
 import Bool "mo:base/Bool";
 import Principal "mo:base/Principal";
@@ -12,6 +12,7 @@ import Text "mo:base/Text";
 import Types "./Types";
 import Debug "mo:base/Debug";
 import Blob "mo:base/Blob";
+import Hex "../lib/Hex";
 import Iter "mo:base/Iter";
 import Time "mo:base/Time";
 import Int "mo:base/Int";
@@ -19,11 +20,17 @@ import HttpTypes "HttpTypes";
 import Sha256 "SHA256";
 import Cycles "mo:base/ExperimentalCycles";
 import Json "json";
-import {recurringTimer; cancelTimer } = "mo:base/Timer";
+import { setTimer; recurringTimer; cancelTimer } = "mo:base/Timer";
 import Error "mo:base/Error";
-// import IC "mo:base/ExperimentalInternetComputer";
+import IC "mo:base/ExperimentalInternetComputer";
+import Result "mo:base/Result";
+import icp_ledger_canister "../lib/icp_ledger_canister";
 
-shared actor class ICRC7NFT() = Self {
+shared actor class ICRC7NFT(env : Text) = Self {
+
+  type icp_ledger_canister_ = icp_ledger_canister.Self;
+
+  let icp_ledger_canister_holder : icp_ledger_canister_ = actor ("ryjl3-tyaaa-aaaaa-aaaba-cai");
 
   var timerId : Nat = 1;
   // var fiveSecond = 5;
@@ -41,6 +48,25 @@ shared actor class ICRC7NFT() = Self {
     create_time : Int;
     balance : Nat;
   };
+  type blob = Blob;
+  type principal = Principal;
+  type nat = Nat;
+  type nat64 = Nat64;
+
+  type Account = {
+    owner : principal;
+    subaccount : ?blob;
+  };
+  public type ApproveArgs = {
+    fee : ?Nat;
+    memo : ?Blob;
+    from_subaccount : ?Blob;
+    created_at_time : ?Nat64;
+    amount : Nat;
+    expected_allowance : ?Nat;
+    expires_at : ?Nat64;
+    spender : Account;
+  };
 
   stable var error_list = List.nil<ErrorLog>();
   stable var cycles_ledger = List.nil<CyclesBalance>();
@@ -55,15 +81,15 @@ shared actor class ICRC7NFT() = Self {
   // 数组中存放的元素是 Principal
   // stable var custodians = List.make<Principal>(custodian);
   // 初始化 logo 图片
-  // stable var logo : Types.LogoResult = { data = "xxx"; logo_type = "xxx" };
+  stable var logo : Types.LogoResult = { data = "xxx"; logo_type = "xxx" };
   // 初始化 name 名称
-  // stable var name : Text = "nft";
-  // stable var symbol : Text = "icrc7";
+  stable var name : Text = "nft";
+  stable var symbol : Text = "icrc7";
 
   // 初始化 最大发行量
   // stable var maxLimit : Nat16 = 9_999;
   // 创建一个新的主体 aaaaa-aa
-  // let null_address : Principal = Principal.fromText("aaaaa-aa");
+  let null_address : Principal = Principal.fromText("aaaaa-aa");
 
   var update_index = 0;
   var update_size = 1000;
@@ -80,6 +106,38 @@ shared actor class ICRC7NFT() = Self {
     // transferable : Text;
     // mint_time : Text;
   };
+
+  //授权
+  public shared ({ caller }) func approve(amount : Nat, principal : Text) : async Result.Result<Nat, Text> {
+    let args : ApproveArgs = {
+      fee = null;
+      memo = null;
+      from_subaccount = null;
+      created_at_time = null;
+      expected_allowance = null;
+      expires_at = null;
+      amount = amount;
+      spender = { owner = Principal.fromText(principal); subaccount = null };
+    };
+    try {
+      // initiate the transfer
+      let transferResult = await icp_ledger_canister_holder.icrc2_approve(args);
+
+      // check if the transfer was successfull
+      switch (transferResult) {
+        case (#Err(transferError)) {
+          return #err("Couldn't transfer funds:\n" # debug_show (transferError));
+        };
+        case (#Ok(blockIndex)) { return #ok blockIndex };
+      };
+
+    } catch (error : Error) {
+      // catch any errors that might occur during the transfer
+      return #err("Reject message: " # Error.message(error));
+    };
+    return #err("Couldn't transfer funds:\n 未知错误");
+  };
+
   public func query_one_time() : async Text {
     try {
       //构建body
@@ -111,7 +169,7 @@ shared actor class ICRC7NFT() = Self {
     try {
       //构建body
       let body = test_build_query_body();
-      Debug.print("AAAAAAAAA--------" # body);
+      Debug.print("--------" # body);
       //发送http 请求
       let https_resp = await do_send_post(body, "sbt-info");
       return https_resp;
@@ -246,23 +304,23 @@ shared actor class ICRC7NFT() = Self {
     return "处理成功";
   };
 
-  func build_binding_body(user_id : Text, ic_account_id : Text, op : Text) : Text {
-    let body = user_id # "," #ic_account_id # "," #op;
-    let signStr = body # "your sign key";
+  func build_binding_body(user_id : Text, ic_account_id : Text, ic_principle_id : Text, op : Text) : Text {
+    let body = user_id # "," #ic_account_id # "," # ic_principle_id # "," #op;
+    let signStr = body # "input your signKey";
     let sign = Sha256.sha256_with_text(signStr);
-    return "{\"user_id\":\"" # user_id # "\"" # ",\"ic_account_id\":\"" # ic_account_id # "\",\"op\":\"" # op # "\"" # ",\"sign\":\"" #debug_show (sign) # "\"}";
+    return "{\"user_id\":\"" # user_id # "\",\"ic_account_id\":\"" # ic_account_id #"\",\"ic_principle_id\":\"" # ic_principle_id # "\",\"op\":\"" # op # "\"" # ",\"sign\":\"" #debug_show (sign) # "\"}";
   };
   func build_query_body() : Text {
     //{
     //"ic_account_id_list":
-    //  "2ce18dcb34247882fd5b402ce11790ce6d743b0c11b091cb2e7ff2b27ee2acb1,3aa18dcb34247882fd5b402ce11790ce6d743b0c11b091cb2e7ff2b27ee2acb1"
+    //  "input your signKey,"
     //}
     let list = get_nft_owner_list();
     // Debug.print(debug_show ("list=" # list));
     if (Text.size(list) == 0) {
       return "";
     };
-    let signStr = list # "you sign key";
+    let signStr = list # "input your signKey";
     let sign = Sha256.sha256_with_text(signStr);
 
     return "{\"ic_account_id_list\":\"" # list # "\"" # ",\"sign\":\"" #debug_show (sign) # "\"}"
@@ -270,7 +328,16 @@ shared actor class ICRC7NFT() = Self {
   };
 
   func test_build_query_body() : Text {
-    renturn "";
+    //{
+    //"ic_account_id_list":
+    //  "input your signKey,"
+    //}
+
+    let signStr = "testtesttest,testtest2" # "input your signKey";
+    let sign = Sha256.sha256_with_text(signStr);
+
+    return "{\"ic_account_id_list\":\"" # "testtesttest,testtest2" # "\"" # ",\"sign\":\"" #debug_show (sign) # "\"}"
+
   };
 
   //查询固定数量的NFT ，每次查询指针后移
@@ -301,9 +368,6 @@ shared actor class ICRC7NFT() = Self {
   public query func nft_count() : async Nat {
     List.size(nfts);
   };
-  public query func query_all_nft() : async Text {
-    return debug_show (nfts);
-  };
 
   public query func queryNfts(ic_account_id : Text) : async Text {
     let nft = List.find(nfts, func(token : Types.Nft) : Bool { token.owner == ic_account_id });
@@ -331,7 +395,7 @@ shared actor class ICRC7NFT() = Self {
         result := Json.addJson(?result, "ic_account_id", ic_account_id);
         result := Json.addJson(?result, "reputation_point", reputation_point);
         result := Json.addJson(?result, "owner", nft.owner);
-        result := Json.addJson(?result, "vfans_account_id", "6d5a62871fb1c8b7944a9ba4b64e58304f831e2cea975c9c66b9968a64026c1e");
+        result := Json.addJson(?result, "vfans_account_id", "  ");
         result := Json.addJson(?result, "nft_type", "ICRC7");
         result := Json.addJson(?result, "location", "Internet Computer");
         result := Json.addJson(?result, "mint_time", mint_time);
@@ -365,7 +429,7 @@ shared actor class ICRC7NFT() = Self {
         result := Json.addJson(?result, "ic_account_id", ic_account_id);
         result := Json.addJson(?result, "reputation_point", reputation_point);
         result := Json.addJson(?result, "owner", nft.owner);
-        result := Json.addJson(?result, "vfans_account_id", "6d5a62871fb1c8b7944a9ba4b64e58304f831e2cea975c9c66b9968a64026c1e");
+        result := Json.addJson(?result, "vfans_account_id", "  ");
         result := Json.addJson(?result, "nft_type", "ICRC7");
         result := Json.addJson(?result, "location", "Internet Computer");
         result := Json.addJson(?result, "mint_time", mint_time);
@@ -396,11 +460,11 @@ shared actor class ICRC7NFT() = Self {
   };
 
   //绑定并铸币
-  public shared func binding_vfans(user_id : Text, ic_account_id : Text) : async Text {
+  public shared func binding_vfans(user_id : Text, ic_account_id : Text, ic_principle_id : Text) : async Text {
     try {
-      Debug.print("接收请求user_id=" #user_id # ",ic_account_id" #ic_account_id);
+      Debug.print("接收请求user_id=" #user_id # ",ic_account_id" #ic_account_id # "ic_principle_id=" # ic_principle_id);
       //构建body
-      let body = build_binding_body(user_id, ic_account_id, "bind");
+      let body = build_binding_body(user_id, ic_account_id, ic_principle_id, "bind");
       Debug.print(debug_show ("请求内容" #body));
       //发送http 请求
       let https_resp = await do_send_post(body, "icAccount");
@@ -408,10 +472,6 @@ shared actor class ICRC7NFT() = Self {
       //处理返回结果
       let result = deal_https_resp(https_resp, "binding");
       if (result != "处理成功") {
-        let unbind_body = build_binding_body(user_id, ic_account_id, "unbind");
-        Debug.print(debug_show ("请求内容" #body));
-        //发送http 请求
-        let _resp = await do_send_post(unbind_body, "icAccount");
         return result;
       };
     } catch e {
@@ -423,7 +483,7 @@ shared actor class ICRC7NFT() = Self {
         error_type = "绑定出错";
       };
       error_list := List.push(aaa, error_list);
-      let body = build_binding_body(user_id, ic_account_id, "unbind");
+      let body = build_binding_body(user_id, ic_account_id,ic_principle_id, "unbind");
       Debug.print(debug_show ("请求内容" #body));
       //发送http 请求
       let https_resp = await do_send_post(body, "icAccount");
@@ -436,11 +496,16 @@ shared actor class ICRC7NFT() = Self {
   public shared ({ caller }) func whoami() : async Principal {
     return caller;
   };
+
+  public shared ({ caller }) func getIcAccountId() : async Text {
+    return Hex.encode(Blob.toArray(Principal.toLedgerAccount(caller, null)));
+  };
+
   func mintICRC7(VFT : VFTParams) : Text {
-    // let now : Int = Time.now();
+    let now : Int = Time.now();
     // let STBCardImage = Blob.fromArray([97, 98, 99]);
-    // let SBTGetTime : Nat32 = 1;
-    // let SBTMembershipCategory = "register";
+    let SBTGetTime : Nat32 = 1;
+    let SBTMembershipCategory = "register";
     //reputationPoint
     let meat : Types.MetadataPart = {
       data = Blob.fromArray([97, 98, 99]);
@@ -485,12 +550,20 @@ shared actor class ICRC7NFT() = Self {
     return "铸币成功";
   };
 
+
+
   // ========================http request==========================================================================================
 
   public func do_send_post(body : Text, uri : Text) : async Text {
 
-    let url = "" #uri;
-    let host = "";
+    // let url = "https://api-dev.vfans.org/user/sbt-info";
+    var url = "https://api.vfans.org/user/" #uri;
+    var host = "api.vfans.org";
+    if (env == "test") {
+      url := "https://api-dev.vfans.org/user/" #uri;
+      host := "api-dev.vfans.org";
+    };
+
     Cycles.add<system>(230_850_258_000);
     let ic : HttpTypes.IC = actor ("aaaaa-aa");
     let http_response : HttpTypes.HttpResponsePayload = await ic.http_request(get_http_req(body, url, host));
@@ -583,7 +656,7 @@ shared actor class ICRC7NFT() = Self {
 
   //==========定时任务======================================================================
   private func outCall() : async () {
-    // let start = Time.now();
+    let start = Time.now();
     if (stop_flag) {
       Debug.print("今日更新完成，结束定时任务");
       cancelTimer(timerId);
@@ -601,7 +674,7 @@ shared actor class ICRC7NFT() = Self {
       stop_flag := true;
     };
     timeLock := false;
-    // let end = Time.now();
+    let end = Time.now();
   };
 
   //查询异常
@@ -626,20 +699,20 @@ shared actor class ICRC7NFT() = Self {
   let a : Nat = recurringTimer<system>(#seconds daySeconds, resetQuery);
 
   // =========================test======================================================================
-  // public shared func make_test() : async () {
-  //   for (i in Iter.range(1, 10000)) {
-  //     let param : VFTParams = {
-  //       sbt_card_image = "1";
-  //       sbt_membership_category = "1";
-  //       sbt_get_time = "1";
-  //       vft_count = "1";
-  //       vft_info = "1";
-  //       user_id = "1";
-  //       sbt_card_number = "1";
-  //       ic_account_id = Nat.toText(i);
-  //       reputation_point = "1";
-  //     };
-  //     let a = mintICRC7(param);
-  //   };
-  // };
+  public shared func make_test() : async () {
+    for (i in Iter.range(1, 10000)) {
+      let param : VFTParams = {
+        sbt_card_image = "1";
+        sbt_membership_category = "1";
+        sbt_get_time = "1";
+        vft_count = "1";
+        vft_info = "1";
+        user_id = "1";
+        sbt_card_number = "1";
+        ic_account_id = Nat.toText(i);
+        reputation_point = "1";
+      };
+      let a = mintICRC7(param);
+    };
+  };
 };

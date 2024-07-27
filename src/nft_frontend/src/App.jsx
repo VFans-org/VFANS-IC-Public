@@ -1,7 +1,7 @@
 import React from "react";
 import LoggedOut from "./LoggedOut";
 import { useAuth, AuthProvider } from "./use-auth-client";
-// import "./assets/main.css";
+import "./assets/main.css";
 import LoggedIn from "./LoggedIn";
 
 function App() {
@@ -29,7 +29,7 @@ function App() {
         </section>
       </header>
       <main id="pageContent">
-        <h1>V 1.0.2</h1>
+        {/* <h1>V 1.0.2</h1>
         <div id="title">
           <div>env:</div>
           <ul>DFX_URL:{process.env.DFX_URL}</ul>
@@ -37,7 +37,7 @@ function App() {
           <ul>DFX_SHOW_TUTO:{process.env.DFX_SHOW_TUTO}</ul>
           <ul>DFX_MORE_VFT:{process.env.DFX_MORE_VFT}</ul>
           <ul>DFX_NETWORK:{process.env.DFX_NETWORK}</ul>
-        </div>
+        </div> */}
         
         {isAuthenticated ? <LoggedIn /> : <LoggedOut />}
       </main>
