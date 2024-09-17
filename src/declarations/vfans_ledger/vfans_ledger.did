@@ -1,0 +1,152 @@
+type tokens = record {e8s: nat64;};
+type VftTransactionLogType = 
+ variant {
+   register;
+   withdrawal_icp;
+   withdrawal_rmb;
+ };
+type VftTransactionLog = 
+ record {
+   log_amount: float64;
+   log_id: nat;
+   log_time: int;
+   log_type: VftTransactionLogType;
+   log_vft_count: float64;
+ };
+type VfansInfoRead = 
+ record {
+   exchang_total_ICP_amount: nat;
+   exchang_total_count: nat;
+   exchange_ICP_amount: nat;
+   exchange_RMB_amount: float64;
+   exchange_VFT_amount: float64;
+   hold_ICP_account_count: nat;
+   inventory_icp_amount: nat;
+   vft_destyoy_toal_amount: float64;
+   vft_issue_toal_amount: float64;
+ };
+type TransformArgs = 
+ record {
+   context: blob;
+   response: HttpResponsePayload;
+ };
+type TransferArgs = 
+ record {
+   accountId: blob;
+   amount: Tokens;
+ };
+type Tokens = record {e8s: nat64;};
+type Result_1 = 
+ variant {
+   err: text;
+   ok: nat64;
+ };
+type Result = 
+ variant {
+   err: text;
+   ok: nat;
+ };
+type RateRecord = 
+ record {
+   currency_type: Asset;
+   rate: float64;
+   update_time: int;
+   yesterday_rate: float64;
+ };
+type ProxyTransferArgs = 
+ record {
+   fromPrincipal: text;
+   sign: text;
+   time: nat;
+   toPrincipal: text;
+   transfer_money_type: nat;
+   vftCount: float64;
+ };
+type LogType = 
+ variant {
+   query_icp_rate;
+   query_icp_usd_rate;
+   simple;
+ };
+type LogSet = 
+ opt record {
+       Log;
+       List;
+     };
+type Log = 
+ record {
+   content: text;
+   log_id: int;
+   log_type: LogType;
+   time: int;
+ };
+type List_1 = 
+ opt record {
+       IcpTransactionSecondLogs;
+       List_1;
+     };
+type List = 
+ opt record {
+       Log;
+       List;
+     };
+type IcpTransactionSecondLogs = 
+ record {
+   amount: nat;
+   time: int64;
+   to: text;
+   txId: int;
+ };
+type HttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+type HttpHeader = 
+ record {
+   name: text;
+   value: text;
+ };
+type CanisterHttpResponsePayload = 
+ record {
+   body: vec nat8;
+   headers: vec HttpHeader;
+   status: nat;
+ };
+type AssetClass = 
+ variant {
+   Cryptocurrency;
+   FiatCurrency;
+ };
+type Asset = 
+ record {
+   class: AssetClass;
+   symbol: text;
+ };
+service : {
+  add_icp_transaction_second_log: (IcpTransactionSecondLogs) -> (text);
+  do_get_exchange_rate: (Asset, bool) -> (RateRecord);
+  get_exchange_rate: (Asset, bool) -> (RateRecord);
+  /// Extract the current exchange rate for the given symbol.
+  get_exchange_rate_rmb: (bool) -> (RateRecord);
+  get_exchange_rate_usd: (bool) -> (RateRecord);
+  get_icp_transaction_second_log: (text) ->
+   (vec IcpTransactionSecondLogs) query;
+  get_icp_transaction_second_log2: () -> (vec record {
+                                                text;
+                                                List_1;
+                                              }) query;
+  get_log: () -> (LogSet);
+  init_exchang_total_count: (nat) -> (nat);
+  init_inventory_icp_amount: (nat, text) -> (bool);
+  proxy_transfer: (ProxyTransferArgs) -> (Result);
+  queryICP: (text) -> (tokens);
+  queryVfanInfo: () -> (VfansInfoRead) query;
+  query_balance: () -> (nat) query;
+  query_sin_str: (ProxyTransferArgs) -> (text);
+  show_vft_transaction_log: () -> (vec VftTransactionLog) query;
+  transfer: (TransferArgs) -> (Result_1);
+  transfer_rmb: (ProxyTransferArgs) -> (Result);
+  transform: (TransformArgs) -> (CanisterHttpResponsePayload) query;
+}

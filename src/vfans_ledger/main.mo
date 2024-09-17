@@ -17,111 +17,63 @@ import Int "mo:base/Int";
 import List "mo:base/List";
 import Bool "mo:base/Bool";
 import Time "mo:base/Time";
+import Int64 "mo:base/Int64";
+import HashMap "mo:base/HashMap";
+import Iter "mo:base/Iter";
 import Set "../lib/Set";
 import LogUtil "../lib/LogUtil";
 import TimeUtil "../lib/TimeUtil";
 import NumberUtil "../lib/NumberUtil";
 import SignUtil "../lib/SignUtil";
 import Hex "../lib/Hex";
+import Types "../http_get/Types";
+import TransferType "libs/TransferType";
+import TextUtils "libs/TextUtils";
 
-actor {
+actor  class X()=this  {
   type icp_ledger_canister_ = icp_ledger_canister.Self;
   type icp_rate_ = icp_rate.Self;
-
   let icp_ledger_canister_holder : icp_ledger_canister_ = actor ("ryjl3-tyaaa-aaaaa-aaaba-cai");
   let icp_rate_holder : icp_rate_ = actor ("uf6dk-hyaaa-aaaaq-qaaaq-cai");
-
   stable var log_list : LogUtil.LogSet = List.nil<LogUtil.Log>();
-
   type blob = Blob;
   type principal = Principal;
   type nat = Nat;
   type nat64 = Nat64;
+  public type VfansInfo = TransferType.VfansInfo;
+  public type VfansInfoRead = TransferType.VfansInfoRead;
+  type Tokens = TransferType.Tokens;
+  type text = Text;
+  type tokens = { e8s : Nat64 };
+  type TextAccountIdentifier = text;
+  type AccountBalanceArgsDfx = { account : TextAccountIdentifier };
+  type TransferArgs = TransferType.TransferArgs;
+  type ProxyTransferArgs = TransferType.ProxyTransferArgs;
+  type Account = TransferType.Account;
+  public type ApproveArgs =TransferType.ApproveArgs;
+  public type Rate = TransferType.Rate;
+  public type RateRecord = TransferType.RateRecord;
+  public type VftTransactionLogs = TransferType.VftTransactionLogs;
+  public type VftTransactionLog = TransferType.VftTransactionLog; //icp_transaction_second_log
+  public type IcpTransactionSecondLogs = TransferType.IcpTransactionSecondLogs;
+  var icp_transaction_second_logs = HashMap.HashMap<Text,List.List<IcpTransactionSecondLogs>>(0, Text.equal, Text.hash);
+  private stable var icp_transaction_second_entries : [(Text, List.List<IcpTransactionSecondLogs>)] = [];
 
-  public type VfansInfo = {
-    var vft_issue_toal_amount : Float; //vft发行总数
-    var vft_destyoy_toal_amount : Float; //vft销毁总数
-    var last_24_exchange_VFT_amount : Float; //近24小时vft兑换总数
-    var last_24_exchange_RMB_amount : Float; //近24小时rmb兑换总数
-    var last_24_exchange_ICP_amount : Nat; //近24小时icp兑换总数
-    var hold_ICP_account : List.List<Text>; //持有ICP的账号数量
-    var exchang_total_count : Nat; //兑换总笔数
-    var inventory_icp_amount : Nat; //库存ICP
-    var exchang_total_ICP_amount : Nat; //总兑换vft数量 但是k8s
-  };
-
-  public type VfansInfoRead = {
-    vft_issue_toal_amount : Float; //vft发行总数
-    vft_destyoy_toal_amount : Float; //vft销毁总数
-    last_24_exchange_VFT_amount : Float; //近24小时vft兑换总数
-    last_24_exchange_RMB_amount : Float; //近24小时rmb兑换总数
-    last_24_exchange_ICP_amount : Nat; //近24小时icp兑换总数
-    hold_ICP_account_count : Nat; //持有ICP的账号数量
-    exchang_total_count : Nat; //兑换总笔数
-    inventory_icp_amount : Nat; //库存ICP
-    exchang_total_ICP_amount : Nat; //总兑换vft数量 但是k8s
-  };
 
   stable let vfansInfo : VfansInfo = {
     var vft_issue_toal_amount = 0;
     var vft_destyoy_toal_amount = 0;
-    var last_24_exchange_VFT_amount = 0;
-    var last_24_exchange_RMB_amount = 0;
-    var last_24_exchange_ICP_amount = 0;
+    var exchange_VFT_amount = 0;
+    var exchange_RMB_amount = 0;
+    var exchange_ICP_amount = 0;
     var hold_ICP_account = List.nil<Text>();
     var exchang_total_count = 0;
     var exchang_total_ICP_amount = 0;
     var inventory_icp_amount = 0;
   };
 
-  type Tokens = {
-    e8s : Nat64;
-  };
-  type text = Text;
-  type tokens = { e8s : Nat64 };
-  type TextAccountIdentifier = text;
-  type AccountBalanceArgsDfx = { account : TextAccountIdentifier };
+  stable let tlogs : VftTransactionLogs = List.nil<VftTransactionLog>();
 
-  type TransferArgs = {
-    amount : Tokens;
-    toPrincipal : Principal;
-    toSubaccount : ?Blob;
-  };
-
-  type ProxyTransferArgs = {
-    sign : Text;
-    toPrincipal : Text;
-    fromPrincipal : Text;
-    vftCount : Float;
-    time : Nat;
-  };
-
-  type Account = {
-    owner : principal;
-    subaccount : ?blob;
-  };
-  public type ApproveArgs = {
-    fee : ?Nat;
-    memo : ?Blob;
-    from_subaccount : ?Blob;
-    created_at_time : ?Nat64;
-    amount : Nat;
-    expected_allowance : ?Nat;
-    expires_at : ?Nat64;
-    spender : Account;
-  };
-  public type Rate = {
-    var rate : Float;
-    var yesterday_rate : Float;
-    var update_time : Int;
-    currency_type : icp_rate.Asset;
-  };
-  public type RateRecord = {
-    rate : Float;
-    yesterday_rate : Float;
-    update_time : Int;
-    currency_type : icp_rate.Asset;
-  };
   stable let rate_rmb_cache : Rate = {
     var rate = 0;
     var yesterday_rate = 0;
@@ -166,6 +118,11 @@ actor {
     return log_list;
   };
 
+  public shared func init_exchang_total_count(count:Nat): async Nat {
+    vfansInfo.exchang_total_count:=count;
+    return vfansInfo.exchang_total_count;
+  };
+
   public shared func do_get_exchange_rate(quote : icp_rate.Asset, refresh : Bool) : async RateRecord {
     let time=TimeUtil.getCurrentSecond();
     if ((not refresh) and cacheEffective(quote)) {
@@ -193,11 +150,6 @@ actor {
         symbol = "ICP";
         class_ = #Cryptocurrency;
       };
-      // quote_asset = {
-      //   symbol = "ICP";
-      //   class_ = #FiatCurrency;
-      // };
-      // Get the current rate.
       timestamp = ?Nat64.fromIntWrap(time);
     };
     let yesterday = time -(60 * 60 * 24);
@@ -208,11 +160,6 @@ actor {
         symbol = "ICP";
         class_ = #Cryptocurrency;
       };
-      // quote_asset = {
-      //   symbol = "ICP";
-      //   class_ = #FiatCurrency;
-      // };
-      // Get the current rate.
       timestamp = ?Nat64.fromIntWrap(yesterday);
     };
 
@@ -316,12 +263,9 @@ actor {
     return await icp_ledger_canister_holder.account_balance_dfx(reqParam);
   };
 
-  public shared func init_inventory_icp_amount(amount : Nat, key : Text) : async Bool {
-    if (key == "vfans001") {
-      vfansInfo.inventory_icp_amount := amount;
+  public shared func init_inventory_icp_amount() : async Bool {
+      vfansInfo.inventory_icp_amount := await icp_ledger_canister_holder.icrc1_balance_of({owner = Principal.fromActor(this);subaccount = null});
       return true;
-    };
-    return false;
   };
 
   //查询ICP余额
@@ -329,9 +273,9 @@ actor {
     return {
       vft_issue_toal_amount = vfansInfo.vft_issue_toal_amount;
       vft_destyoy_toal_amount = vfansInfo.vft_destyoy_toal_amount;
-      last_24_exchange_VFT_amount = vfansInfo.last_24_exchange_VFT_amount;
-      last_24_exchange_RMB_amount = vfansInfo.last_24_exchange_RMB_amount;
-      last_24_exchange_ICP_amount = vfansInfo.last_24_exchange_ICP_amount;
+      exchange_VFT_amount = vfansInfo.exchange_VFT_amount;
+      exchange_RMB_amount = vfansInfo.exchange_RMB_amount;
+      exchange_ICP_amount = vfansInfo.exchange_ICP_amount;
       hold_ICP_account_count = List.size(vfansInfo.hold_ICP_account);
       exchang_total_count = vfansInfo.exchang_total_count;
       inventory_icp_amount = vfansInfo.inventory_icp_amount;
@@ -340,7 +284,7 @@ actor {
   };
 
   func check_sign (param : ProxyTransferArgs) : Bool {
-    return SignUtil.check_sign(get_proxy_transfer_sign_array(param),param.sign,"input your signKey");
+    return SignUtil.check_sign(get_proxy_transfer_sign_array(param),param.sign,"xxxx");
   };
 
   func get_proxy_transfer_sign_array (param : ProxyTransferArgs) : [Text] {
@@ -348,7 +292,73 @@ actor {
     return sign_arr;
   };
   public shared ({ caller }) func query_sin_str(param : ProxyTransferArgs) : async Text {
-      return SignUtil.get_sign_str(get_proxy_transfer_sign_array(param),"input your signKey");
+      return SignUtil.get_sign_str(get_proxy_transfer_sign_array(param),"xxxx");
+  };
+
+
+
+  public func transfer_rmb(param : ProxyTransferArgs) :async Result.Result<Nat, Text> {
+    // let ic : Types.IC = actor ("aaaaa-aa");
+
+    let rmb_amount = param.vftCount / 3 ;
+//    Cycles.add<system>(230_949_972_000);
+//    let host = "";
+//    let transform_context : Types.TransformContext = {
+//      function = transform;
+//      context = Blob.fromArray([]);
+//    };
+//    let http_response : Types.HttpResponsePayload = await ic.http_request({
+//      url = host # "";
+//      max_response_bytes = null; //optional for request
+//      headers = [
+//        { name = "Host"; value = host # ":443" },
+//        { name = "User-Agent"; value = "exchange_rate_canister" },
+//      ];
+//      body = null; //optional for request
+//      method = #post;
+//      transform = ?transform_context;
+//    });
+
+//    if (http_response.status == 200) {
+    vfansInfo.exchange_VFT_amount += param.vftCount;
+    vfansInfo.exchange_RMB_amount += rmb_amount;
+    vfansInfo.exchang_total_count += 1;
+    ignore List.push<VftTransactionLog>({
+        //日志ID
+      log_id  = List.size(tlogs);
+      // 事务类型
+      log_type = #withdrawal_rmb;
+      // 交易时间
+      log_time = Time.now();
+      // 交易金额
+      log_amount  = rmb_amount;
+      // vft 数量
+      log_vft_count = param.vftCount;
+    },tlogs);
+    return #ok 200;
+//    };
+//    return #err("error code = " # Nat.toText(http_response.status));
+  };
+  public query func transform(raw : Types.TransformArgs) : async Types.CanisterHttpResponsePayload {
+      let transformed : Types.CanisterHttpResponsePayload = {
+          status = raw.response.status;
+          body = raw.response.body;
+          headers = [
+              {
+                  name = "Content-Security-Policy";
+                  value = "default-src 'self'";
+              },
+              { name = "Referrer-Policy"; value = "strict-origin" },
+              { name = "Permissions-Policy"; value = "geolocation=(self)" },
+              {
+                  name = "Strict-Transport-Security";
+                  value = "max-age=63072000";
+              },
+              { name = "X-Frame-Options"; value = "DENY" },
+              { name = "X-Content-Type-Options"; value = "nosniff" },
+          ];
+      };
+      transformed;
   };
 
   //代理转账
@@ -360,6 +370,10 @@ actor {
     
     if(not check_sign(param)){
       return #err("签名验证失败");
+    };
+
+    if(param.transfer_money_type == 1){
+      return await transfer_rmb(param);
     };
     if(rate_rmb_cache.rate==0){
       return #err("获取汇率异常");
@@ -374,24 +388,18 @@ actor {
     };
     
 
-    let args = {
-      to = { owner = Principal.fromText(param.toPrincipal); subaccount = null };
-      fee = null;
-      spender_subaccount = null;
-      from = {
-        owner = Principal.fromText(param.fromPrincipal);
-        subaccount = null;
-      };
-      memo = null;
-      created_at_time = null;
-      amount = amount;
-    };
-
     try {
       // initiate the transfer
       // initiate the transfer
 
-      let transferResult = await icp_ledger_canister_holder.icrc2_transfer_from(args);
+      let transferResult = await icp_ledger_canister_holder.icrc1_transfer({
+        to =  { owner = Principal.fromText(param.toPrincipal); subaccount = null };
+        fee = null;
+        memo = null;
+        from_subaccount = null;
+        created_at_time = null;
+        amount = amount;
+      });
 
       // check if the transfer was successfull
       switch (transferResult) {
@@ -403,7 +411,18 @@ actor {
           vfansInfo.exchang_total_ICP_amount += amount;
           vfansInfo.inventory_icp_amount -= amount;
           vfansInfo.hold_ICP_account := Set.add(param.toPrincipal, vfansInfo.hold_ICP_account);
-          //近24小时
+          ignore List.push<VftTransactionLog>({
+             //日志ID
+            log_id  = List.size(tlogs);
+            // 事务类型
+            log_type = #withdrawal_icp;
+            // 交易时间
+            log_time = Time.now();
+            // 交易金额
+            log_amount  =  Float.fromInt(amount);
+            // vft 数量
+            log_vft_count = param.vftCount;
+          },tlogs);
           return #ok amount;
         };
       };
@@ -414,14 +433,49 @@ actor {
     return #err("Couldn't transfer funds:\n 未知错误");
   };
 
-  public shared ({ caller }) func transfer(args : TransferArgs) : async Result.Result<icp_ledger_canister.BlockIndex, Text> {
+
+    public query func show_vft_transaction_log():async [VftTransactionLog] {
+      return List.toArray(tlogs);
+    };
+
+    public shared ({caller}) func add_icp_transaction_second_log(param : IcpTransactionSecondLogs):async Text {
+      let ic_account_id = TextUtils.toAddress(caller);
+      let values = icp_transaction_second_logs.get(ic_account_id);
+      switch(values){
+        case (null) {
+          icp_transaction_second_logs.put(ic_account_id ,
+            List.push<IcpTransactionSecondLogs>(param,List.nil<IcpTransactionSecondLogs>()));
+        };
+        case (?values) {
+          icp_transaction_second_logs.put(ic_account_id,
+            List.push<IcpTransactionSecondLogs>(param,values));
+        };
+      };
+      return "ok";
+    };
+    public query ({caller}) func get_icp_transaction_second_log(ic_account_id:Text):async [IcpTransactionSecondLogs] {
+      let find = icp_transaction_second_logs.get(ic_account_id);
+      switch(find){
+        case (null) {
+          return [];
+        };
+        case (?find) {
+          return List.toArray<IcpTransactionSecondLogs>(find);
+        };
+      }
+    };
+    public query ({caller}) func get_icp_transaction_second_log2():async [(Text, List.List<IcpTransactionSecondLogs>)] {
+      return Iter.toArray(icp_transaction_second_logs.entries());
+    };
+
+
+  // 转账-真正的转账
+  public shared ({ caller }) func transfer(args : TransferArgs) : async Result.Result<Nat64, Text> {
     Debug.print(
       "Transferring "
       # debug_show (args.amount)
       # " tokens to principal "
-      # debug_show (args.toPrincipal)
-      # " subaccount "
-      # debug_show (args.toSubaccount)
+      # debug_show (args.accountId)
     );
 
     let transferArgs : icp_ledger_canister.TransferArgs = {
@@ -435,7 +489,8 @@ actor {
       from_subaccount = null;
       // we take the principal and subaccount from the arguments and convert them into an account identifier
       // to = Blob.toArray(Principal.toLedgerAccount(args.toPrincipal, args.toSubaccount));
-      to = Principal.toLedgerAccount(args.toPrincipal, args.toSubaccount);
+      // to = Principal.toLedgerAccount(args.toPrincipal, args.toSubaccount);
+      to= args.accountId;
       // a timestamp indicating when the transaction was created by the caller; if it is not specified by the caller then this is set to the current ICP time
       created_at_time = null;
     };
@@ -456,4 +511,17 @@ actor {
       return #err("Reject message: " # Error.message(error));
     };
   };
+
+
+  system func preupgrade() {
+    icp_transaction_second_entries := Iter.toArray(icp_transaction_second_logs.entries());
+  };
+
+  system func postupgrade() {
+    icp_transaction_second_logs := HashMap.fromIter<Text, List.List<IcpTransactionSecondLogs>>(
+      Iter.fromArray<(Text, List.List<IcpTransactionSecondLogs>)>(icp_transaction_second_entries),
+      Array.size(icp_transaction_second_entries),Text.equal,Text.hash);
+    icp_transaction_second_entries := [];
+  };
+
 };

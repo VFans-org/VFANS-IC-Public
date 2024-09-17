@@ -1,5 +1,3 @@
-import Nat "mo:base/Nat";
-import Float "mo:base/Float";
 // This is a generated Motoko binding.
 // Please use `import service "ic:canister_id"` instead to call canisters on the IC if possible.
 
@@ -42,12 +40,12 @@ module {
     controller_id : Principal;
   };
   public type ArchivedBlocksRange = {
-    callback : shared query GetBlocksArgs -> async Result_3;
+    callback : shared query GetBlocksArgs -> async Result_4;
     start : Nat64;
     length : Nat64;
   };
   public type ArchivedEncodedBlocksRange = {
-    callback : shared query GetBlocksArgs -> async Result_4;
+    callback : shared query GetBlocksArgs -> async Result_5;
     start : Nat64;
     length : Nat64;
   };
@@ -85,8 +83,31 @@ module {
     operation : ?CandidOperation;
     created_at_time : TimeStamp;
   };
+  public type ConsentInfo = {
+    metadata : ConsentMessageMetadata;
+    consent_message : ConsentMessage;
+  };
+  public type ConsentMessage = {
+    #LineDisplayMessage : { pages : [LineDisplayPage] };
+    #GenericDisplayMessage : Text;
+  };
+  public type ConsentMessageMetadata = { language : Text };
+  public type ConsentMessageRequest = {
+    arg : Blob;
+    method : Text;
+    user_preferences : ConsentMessageSpec;
+  };
+  public type ConsentMessageSpec = {
+    metadata : ConsentMessageMetadata;
+    device_spec : ?DisplayMessageType;
+  };
   public type Decimals = { decimals : Nat32 };
+  public type DisplayMessageType = {
+    #GenericDisplay;
+    #LineDisplay : { characters_per_line : Nat16; lines_per_page : Nat16 };
+  };
   public type Duration = { secs : Nat64; nanos : Nat32 };
+  public type ErrorInfo = { description : Text };
   public type FeatureFlags = { icrc2 : Bool };
   public type GetBlocksArgs = { start : Nat64; length : Nat64 };
   public type GetBlocksError = {
@@ -95,6 +116,12 @@ module {
       first_valid_index : Nat64;
     };
     #Other : { error_message : Text; error_code : Nat64 };
+  };
+  public type Icrc21Error = {
+    #GenericError : { description : Text; error_code : Nat };
+    #InsufficientPayment : ErrorInfo;
+    #UnsupportedCanisterCall : ErrorInfo;
+    #ConsentMessageUnavailable : ErrorInfo;
   };
   public type InitArgs = {
     send_whitelist : [Principal];
@@ -115,6 +142,7 @@ module {
     #Upgrade : ?UpgradeArgs;
     #Init : InitArgs;
   };
+  public type LineDisplayPage = { lines : [Text] };
   public type MetadataValue = {
     #Int : Int;
     #Nat : Nat;
@@ -137,11 +165,12 @@ module {
     archived_blocks : [ArchivedEncodedBlocksRange];
   };
   public type Result = { #Ok : Nat; #Err : TransferError };
-  public type Result_1 = { #Ok : Nat; #Err : ApproveError };
-  public type Result_2 = { #Ok : Nat; #Err : TransferFromError };
-  public type Result_3 = { #Ok : BlockRange; #Err : GetBlocksError };
-  public type Result_4 = { #Ok : [Blob]; #Err : GetBlocksError };
-  public type Result_5 = { #Ok : Nat64; #Err : TransferError_1 };
+  public type Result_1 = { #Ok : ConsentInfo; #Err : Icrc21Error };
+  public type Result_2 = { #Ok : Nat; #Err : ApproveError };
+  public type Result_3 = { #Ok : Nat; #Err : TransferFromError };
+  public type Result_4 = { #Ok : BlockRange; #Err : GetBlocksError };
+  public type Result_5 = { #Ok : [Blob]; #Err : GetBlocksError };
+  public type Result_6 = { #Ok : Nat64; #Err : TransferError_1 };
   public type SendArgs = {
     to : Text;
     fee : Tokens;
@@ -219,6 +248,7 @@ module {
     account_identifier : shared query Account -> async Blob;
     archives : shared query () -> async Archives;
     decimals : shared query () -> async Decimals;
+    icrc10_supported_standards : shared query () -> async [StandardRecord];
     icrc1_balance_of : shared query Account -> async Nat;
     icrc1_decimals : shared query () -> async Nat8;
     icrc1_fee : shared query () -> async Nat;
@@ -229,15 +259,16 @@ module {
     icrc1_symbol : shared query () -> async Text;
     icrc1_total_supply : shared query () -> async Nat;
     icrc1_transfer : shared TransferArg -> async Result;
+    icrc21_canister_call_consent_message : shared ConsentMessageRequest -> async Result_1;
     icrc2_allowance : shared query AllowanceArgs -> async Allowance;
-    icrc2_approve : shared ApproveArgs -> async Result_1;
-    icrc2_transfer_from : shared TransferFromArgs -> async Result_2;
+    icrc2_approve : shared ApproveArgs -> async Result_2;
+    icrc2_transfer_from : shared TransferFromArgs -> async Result_3;
     name : shared query () -> async Name;
     query_blocks : shared query GetBlocksArgs -> async QueryBlocksResponse;
     query_encoded_blocks : shared query GetBlocksArgs -> async QueryEncodedBlocksResponse;
     send_dfx : shared SendArgs -> async Nat64;
     symbol : shared query () -> async Symbol;
-    transfer : shared TransferArgs -> async Result_5;
+    transfer : shared TransferArgs -> async Result_6;
     transfer_fee : shared query {} -> async TransferFee;
-  };
-};
+  }
+}
