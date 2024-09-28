@@ -72,7 +72,7 @@ actor  class X()=this  {
     var inventory_icp_amount = 0;
   };
 
-  stable let tlogs : VftTransactionLogs = List.nil<VftTransactionLog>();
+  stable var tlogs : VftTransactionLogs = List.nil<VftTransactionLog>();
 
   stable let rate_rmb_cache : Rate = {
     var rate = 0;
@@ -263,9 +263,9 @@ actor  class X()=this  {
     return await icp_ledger_canister_holder.account_balance_dfx(reqParam);
   };
 
-  public shared func init_inventory_icp_amount() : async Bool {
+  public shared func init_inventory_icp_amount() : async Nat {
       vfansInfo.inventory_icp_amount := await icp_ledger_canister_holder.icrc1_balance_of({owner = Principal.fromActor(this);subaccount = null});
-      return true;
+      return vfansInfo.inventory_icp_amount;
   };
 
   //查询ICP余额
@@ -323,7 +323,12 @@ actor  class X()=this  {
     vfansInfo.exchange_VFT_amount += param.vftCount;
     vfansInfo.exchange_RMB_amount += rmb_amount;
     vfansInfo.exchang_total_count += 1;
-    ignore List.push<VftTransactionLog>({
+    tlogs := List.push<VftTransactionLog>({
+      //
+      from = param.fromPrincipal;
+      to = param.toPrincipal;
+      chain_id = 0;
+      nickname = param.nickname;
         //日志ID
       log_id  = List.size(tlogs);
       // 事务类型
@@ -411,7 +416,11 @@ actor  class X()=this  {
           vfansInfo.exchang_total_ICP_amount += amount;
           vfansInfo.inventory_icp_amount -= amount;
           vfansInfo.hold_ICP_account := Set.add(param.toPrincipal, vfansInfo.hold_ICP_account);
-          ignore List.push<VftTransactionLog>({
+          tlogs := List.push<VftTransactionLog>({
+            from = param.fromPrincipal;
+            to = param.toPrincipal;
+            chain_id = blockIndex;
+            nickname = param.nickname;
              //日志ID
             log_id  = List.size(tlogs);
             // 事务类型
@@ -467,6 +476,12 @@ actor  class X()=this  {
     public query ({caller}) func get_icp_transaction_second_log2():async [(Text, List.List<IcpTransactionSecondLogs>)] {
       return Iter.toArray(icp_transaction_second_logs.entries());
     };
+
+
+//查询地址
+public shared func get_address() : async Text {
+ return TextUtils.toAddress(Principal.fromActor(this));
+};
 
 
   // 转账-真正的转账

@@ -3,6 +3,7 @@ import Principal "mo:base/Principal";
 import Blob "mo:base/Blob";
 import Float "mo:base/Float";
 import Int "mo:base/Int";
+import Text "mo:base/Text";
 import icp_rate "../../lib/icp_rate";
 module {
 
@@ -47,6 +48,7 @@ module {
         time : Nat;
         // 0 icp 1 rmb
         transfer_money_type : Nat;
+        nickname : Text;
     };
 
     public type Account = {
@@ -91,6 +93,15 @@ module {
 
     //事务日志
     public type VftTransactionLog = {
+
+        // from
+        from : Text;
+        // to
+        to : Text;
+        // nickName
+        nickname : Text;
+        // chainId
+        chain_id : Nat;
         //日志ID
         log_id : Nat;
         // 事务类型

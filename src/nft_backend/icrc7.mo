@@ -554,6 +554,9 @@ shared actor class ICRC7NFT(env : Text) = Self {
 
   // ========================http request==========================================================================================
 
+  public query func show_env() : async Text {
+    env;
+  };
   public func do_send_post(body : Text, uri : Text) : async Text {
 
     // let url = "https://api-dev.vfans.org/user/sbt-info";
