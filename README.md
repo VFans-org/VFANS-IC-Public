@@ -11,22 +11,21 @@ Key Features:
 5. Internet Identity Flexibility: If you lose access to your Internet Identity, you can easily change it without losing your VFTs. Your VFAN account remains secure, and your SBT will be updated to reflect the new associated principal ID.
 
 
-## 介绍
+## Data Follow
 
-本项目链接了链上与链下。通过使用Motoko 语言来编写智能合约。基于Motoko的特性实现数据链上的永久存储。
 
-- 铸币流程图
+- Data Flow of SBT Mint
 
 ![image](https://github.com/VFans-org/VFANS-IC-Public/assets/107297097/7473330a-a415-4386-bd40-4392a184d1ce)
 
 
-  - 同步数据流程
+  - Data Snyc Process
 
 ![image](https://github.com/VFans-org/VFANS-IC-Public/assets/107297097/1e4e366a-cb2a-40f6-96a6-1ee65a03d394)
 
 
 
-## 部署流程
+## Depolyment
 
 ### 部署环境
 
