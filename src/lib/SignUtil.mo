@@ -21,7 +21,7 @@ module {
     };
 
     public func sign_param(paramList : [Text], secret_key : Text) : Text {
-        return Hex.encode(Sha256.sha256_with_text(get_sign_str(paramList,secret_key)));
+        return Hex.encode(Sha256.sha256_with_text(get_sign_str(paramList, secret_key)));
     };
     public func check_sign(paramList : [Text], sign : Text, secret_key : Text) : Bool {
         return Text.equal(sign_param(paramList, secret_key), sign);

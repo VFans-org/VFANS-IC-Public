@@ -69,6 +69,16 @@ module {
     id : TokenId;
     meta : MetadataDesc;
   };
+  public type NftNew = {
+    op : Text;
+    tid : Nat;
+    from : Text;
+    to : Text;
+    var owner : Text;
+    id : TokenId;
+    var uid : ?Nat;
+    meta : MetadataDesc;
+  };
 
   public type UpdateNftOption = {
     update_index : Nat;

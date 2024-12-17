@@ -1,6 +1,5 @@
 import Debug "mo:base/Debug";
 import Result "mo:base/Result";
-import Option "mo:base/Option";
 import Blob "mo:base/Blob";
 import Error "mo:base/Error";
 import Array "mo:base/Array";
@@ -17,20 +16,26 @@ import Int "mo:base/Int";
 import List "mo:base/List";
 import Bool "mo:base/Bool";
 import Time "mo:base/Time";
-import Int64 "mo:base/Int64";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
-import Set "../lib/Set";
+import Hash "mo:base/Hash";
 import LogUtil "../lib/LogUtil";
 import TimeUtil "../lib/TimeUtil";
 import NumberUtil "../lib/NumberUtil";
 import SignUtil "../lib/SignUtil";
-import Hex "../lib/Hex";
+import LOGGER_ "../lib/LOGGER";
 import Types "../http_get/Types";
 import TransferType "libs/TransferType";
 import TextUtils "libs/TextUtils";
+import time "libs/time";
+import VftTypes "libs/VftTypes";
+import Set "mo:base/OrderedSet";
+import Buffer "mo:base/Buffer";
+import Config "../lib/Config";
+
 
 actor  class X()=this  {
+  let LOGGER : LOGGER_.Self = actor(Config.LOGGER_SERVICE_CANISTER_ID);
   type icp_ledger_canister_ = icp_ledger_canister.Self;
   type icp_rate_ = icp_rate.Self;
   let icp_ledger_canister_holder : icp_ledger_canister_ = actor ("ryjl3-tyaaa-aaaaa-aaaba-cai");
@@ -40,7 +45,7 @@ actor  class X()=this  {
   type principal = Principal;
   type nat = Nat;
   type nat64 = Nat64;
-  public type VfansInfo = TransferType.VfansInfo;
+  // public type VfansInfo = TransferType.VfansInfo;
   public type VfansInfoRead = TransferType.VfansInfoRead;
   type Tokens = TransferType.Tokens;
   type text = Text;
@@ -58,19 +63,198 @@ actor  class X()=this  {
   public type IcpTransactionSecondLogs = TransferType.IcpTransactionSecondLogs;
   var icp_transaction_second_logs = HashMap.HashMap<Text,List.List<IcpTransactionSecondLogs>>(0, Text.equal, Text.hash);
   private stable var icp_transaction_second_entries : [(Text, List.List<IcpTransactionSecondLogs>)] = [];
+  public type TokenPlanTask = VftTypes.TokenPlanTask;
+  public type TokenPlanTaskView = VftTypes.TokenPlanTaskView;
+  public type Result = VftTypes.Result;
+  public type User = VftTypes.User;
+  public type VftLogParam = VftTypes.VftLogParam;
+  public type VftLog = VftTypes.VftLog;
+  stable var enable_exchange_vft_amount : Float = 0;
+  
 
 
-  stable let vfansInfo : VfansInfo = {
-    var vft_issue_toal_amount = 0;
-    var vft_destyoy_toal_amount = 0;
-    var exchange_VFT_amount = 0;
-    var exchange_RMB_amount = 0;
-    var exchange_ICP_amount = 0;
-    var hold_ICP_account = List.nil<Text>();
-    var exchang_total_count = 0;
-    var exchang_total_ICP_amount = 0;
-    var inventory_icp_amount = 0;
-  };
+  var userTableMap = HashMap.HashMap<Nat,User>(1000, Nat.equal, Hash.hash);
+  stable var userTable : [User]=[]; 
+  stable var tokenPlanTaskTable : [TokenPlanTask]= [
+    {
+        id  = 0;
+        var name  = "发电卡";
+        var code = "SBT_1";
+        var amount = 4000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 1;
+        var name  = "新用户注册";
+        var code = "register";
+        var amount = 6000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 2;
+        var name  = "邀请好友注册";
+        var code = "invite";
+        var amount = 3000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 3;
+        var name  = "治理任务";
+        var code = "work";
+        var amount = 600000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 5;
+        var name  = "闪电卡";
+        var code = "SBT_2";
+        var amount = 40000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 6;
+        var name  = "雷电卡";
+        var code = "SBT_3";
+        var amount = 400000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 7;
+        var name  = "VFT兑换";
+        var code = "withdraw";
+        var amount = -1;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 8;
+        var name  = "每订阅付费7元";
+        var code = "pay7";
+        var amount = 142857000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 9;
+        var name  = "邀请朋友每订阅付费7元";
+        var code = "invitePay";
+        var amount = 142857000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 10;
+        var name  = "创作者激活频道";
+        var code = "activeChannel";
+        var amount = 50000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 11;
+        var name  = "创作者每获得一位新订阅付费用户";
+        var code = "acquireCustomer";
+        var amount = 20000000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 12;
+        var name  = "创作者每获得7元订阅收入";
+        var code = "earn7";
+        var amount = 428571000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 13;
+        var name  = "空投卡";
+        var code = "SBT_4";
+        var amount = 300000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 14;
+        var name  = "VFT兑换IC";
+        var code = "ic_exchange";
+        var amount = -100000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    },
+    {
+        id  = 15;
+        var name  = "VFT兑换RMB";
+        var code = "rmb_exchange";
+        var amount = -100000000;
+        var create_by = null;
+        var create_time = null;
+        var update_by = null;
+        var update_time = null;
+        var remark = null;
+    }
+];
+
+
+  // stable let vfansInfo : VfansInfo = {
+  //   var vft_issue_toal_amount = 0;
+  //   var vft_destroy_toal_amount = 0;
+  //   var exchange_VFT_amount = 0;
+  //   var exchange_RMB_amount = 0;
+  //   var exchange_ICP_amount = 0;
+  //   var hold_ICP_account = List.nil<Text>();
+  //   var exchang_total_count = 0;
+  //   var exchang_total_ICP_amount = 0;
+  //   var inventory_icp_amount = 0;
+  // };
 
   stable var tlogs : VftTransactionLogs = List.nil<VftTransactionLog>();
 
@@ -118,10 +302,11 @@ actor  class X()=this  {
     return log_list;
   };
 
-  public shared func init_exchang_total_count(count:Nat): async Nat {
-    vfansInfo.exchang_total_count:=count;
-    return vfansInfo.exchang_total_count;
-  };
+  // public shared func init_exchang_total_count(count:Nat,pwd:Text): async Nat {
+  //   assert Config.SECRET_ADMIN == pwd;
+  //   vfansInfo.exchang_total_count:=count;
+  //   return vfansInfo.exchang_total_count;
+  // };
 
   public shared func do_get_exchange_rate(quote : icp_rate.Asset, refresh : Bool) : async RateRecord {
     let time=TimeUtil.getCurrentSecond();
@@ -250,7 +435,7 @@ actor  class X()=this  {
       };
       last_time := rate_rmb_cache.update_time;
     };
-    return (last_time +600) > getCurrentSecond();
+    return (last_time + 3600) > getCurrentSecond();
   };
 
   private func getCurrentSecond() : Int {
@@ -264,27 +449,28 @@ actor  class X()=this  {
   };
 
   public shared func init_inventory_icp_amount() : async Nat {
-      vfansInfo.inventory_icp_amount := await icp_ledger_canister_holder.icrc1_balance_of({owner = Principal.fromActor(this);subaccount = null});
-      return vfansInfo.inventory_icp_amount;
+      let inventory_icp_amount = await icp_ledger_canister_holder.icrc1_balance_of({owner = Principal.fromActor(this);subaccount = null});
+      return inventory_icp_amount;
   };
 
   //查询ICP余额
-  public query func queryVfanInfo() : async VfansInfoRead {
+  public func queryVfanInfo() : async VfansInfoRead {
+    let  new_amount = await init_inventory_icp_amount();
+    let info = TransferType.calculateVfansInfo(List.toArray<VftTransactionLog>(tlogs),userTableMap);
     return {
-      vft_issue_toal_amount = vfansInfo.vft_issue_toal_amount;
-      vft_destyoy_toal_amount = vfansInfo.vft_destyoy_toal_amount;
-      exchange_VFT_amount = vfansInfo.exchange_VFT_amount;
-      exchange_RMB_amount = vfansInfo.exchange_RMB_amount;
-      exchange_ICP_amount = vfansInfo.exchange_ICP_amount;
-      hold_ICP_account_count = List.size(vfansInfo.hold_ICP_account);
-      exchang_total_count = vfansInfo.exchang_total_count;
-      inventory_icp_amount = vfansInfo.inventory_icp_amount;
-      exchang_total_ICP_amount = vfansInfo.exchang_total_ICP_amount;
+      vft_issue_toal_amount = info.vft_issue_toal_amount;
+      vft_destroy_toal_amount = info.vft_destroy_toal_amount;
+      exchange_VFT_amount = info.exchange_VFT_amount;
+      exchange_RMB_amount = info.exchange_RMB_amount;
+      exchange_ICP_amount = info.exchange_ICP_amount;
+      hold_ICP_account_count = info.hold_ICP_account;
+      exchang_total_count = info.exchang_total_count;
+      inventory_icp_amount = new_amount;
+      enable_exchange_vft_amount = enable_exchange_vft_amount;
     };
   };
-
   func check_sign (param : ProxyTransferArgs) : Bool {
-    return SignUtil.check_sign(get_proxy_transfer_sign_array(param),param.sign,"xxxx");
+    return SignUtil.check_sign(get_proxy_transfer_sign_array(param),param.sign,Config.SECRET_KEY);
   };
 
   func get_proxy_transfer_sign_array (param : ProxyTransferArgs) : [Text] {
@@ -292,39 +478,23 @@ actor  class X()=this  {
     return sign_arr;
   };
   public shared ({ caller }) func query_sin_str(param : ProxyTransferArgs) : async Text {
-      return SignUtil.get_sign_str(get_proxy_transfer_sign_array(param),"xxxx");
+      return SignUtil.get_sign_str(get_proxy_transfer_sign_array(param),Config.SECRET_KEY);
   };
 
 
+  public shared  ({caller}) func setEnable_exchange_vft_amount(vftCount:Float):async (){
+      assert isAdmin(caller);
+      enable_exchange_vft_amount := vftCount;
+  };
 
   public func transfer_rmb(param : ProxyTransferArgs) :async Result.Result<Nat, Text> {
-    // let ic : Types.IC = actor ("aaaaa-aa");
-
     let rmb_amount = param.vftCount / 3 ;
-//    Cycles.add<system>(230_949_972_000);
-//    let host = "";
-//    let transform_context : Types.TransformContext = {
-//      function = transform;
-//      context = Blob.fromArray([]);
-//    };
-//    let http_response : Types.HttpResponsePayload = await ic.http_request({
-//      url = host # "";
-//      max_response_bytes = null; //optional for request
-//      headers = [
-//        { name = "Host"; value = host # ":443" },
-//        { name = "User-Agent"; value = "exchange_rate_canister" },
-//      ];
-//      body = null; //optional for request
-//      method = #post;
-//      transform = ?transform_context;
-//    });
-
-//    if (http_response.status == 200) {
-    vfansInfo.exchange_VFT_amount += param.vftCount;
-    vfansInfo.exchange_RMB_amount += rmb_amount;
-    vfansInfo.exchang_total_count += 1;
+    // vfansInfo.exchange_VFT_amount += param.vftCount;
+    // vfansInfo.exchange_RMB_amount += rmb_amount;
+    // vfansInfo.exchang_total_count += 1;
+    enable_exchange_vft_amount -= param.vftCount;
     tlogs := List.push<VftTransactionLog>({
-      //
+      // 
       from = param.fromPrincipal;
       to = param.toPrincipal;
       chain_id = 0;
@@ -366,9 +536,11 @@ actor  class X()=this  {
       transformed;
   };
 
-  //代理转账
+  //代理转账0001
   public shared ({ caller }) func proxy_transfer(param : ProxyTransferArgs) : async Result.Result<Nat, Text> {
-    
+    if (enable_exchange_vft_amount  < param.vftCount){
+      return #err("vft可兑换金额不足 enable_exchange_vft_amount = " # Float.toText(enable_exchange_vft_amount));
+    };
     if(not TimeUtil.checkTimeout(param.time)){
       return #err("时间超时");
     };
@@ -388,8 +560,9 @@ actor  class X()=this  {
       return #err("金额异常,可兑换ICP不足以支付手续费");
     };
     amount -=10000;
-    if(vfansInfo.inventory_icp_amount < amount){
-      return #err("库存不足,当前剩余库存" # Nat.toText(vfansInfo.inventory_icp_amount));
+    let inventory_icp_amount = await init_inventory_icp_amount();
+    if(inventory_icp_amount < amount){
+      return #err("库存不足,当前剩余库存" # Nat.toText(inventory_icp_amount));
     };
     
 
@@ -412,10 +585,11 @@ actor  class X()=this  {
           return #err("Couldn't transfer funds:\n" # debug_show (transferError));
         };
         case (#Ok(blockIndex)) {
-          vfansInfo.exchang_total_count += 1;
-          vfansInfo.exchang_total_ICP_amount += amount;
-          vfansInfo.inventory_icp_amount -= amount;
-          vfansInfo.hold_ICP_account := Set.add(param.toPrincipal, vfansInfo.hold_ICP_account);
+          // vfansInfo.exchang_total_count += 1;
+          // vfansInfo.exchang_total_ICP_amount += amount;
+          // vfansInfo.inventory_icp_amount -= amount;
+          // vfansInfo.hold_ICP_account := VftTypes.addIfNotExist(param.toPrincipal, vfansInfo.hold_ICP_account);
+          enable_exchange_vft_amount -= param.vftCount;
           tlogs := List.push<VftTransactionLog>({
             from = param.fromPrincipal;
             to = param.toPrincipal;
@@ -527,9 +701,264 @@ public shared func get_address() : async Text {
     };
   };
 
+  // ----------------------------20241122-------------------------------------------------
+
+
+  public query func getTokenPlanTaskTable(): async [TokenPlanTaskView] {
+    return VftTypes.to_views(tokenPlanTaskTable);
+  };
+
+
+  public shared func updateTokenPlanTaskTable(id:Nat,amount:Int,remark:?Text,sign:Text): async Result  {
+
+    let check = SignUtil.check_sign([Nat.toText(id),Int.toText(amount)],sign,Config.SECRET_KEY);
+    if(not check){
+      return {
+        code=501;
+        msg="签名错误";
+      };
+    };
+
+
+    let find = Array.find<TokenPlanTask>(tokenPlanTaskTable,func(item:TokenPlanTask):Bool{
+      return item.id == id;
+    });
+    switch(find){
+      case (null) {
+        return {
+          code=1;
+          msg="未找到记录 id = " # Nat.toText(id);
+        };
+      };
+      case (?find) {
+        find.amount := amount;
+        switch(remark){
+          case (null) {
+            
+          };
+          case (?remark) {
+            find.remark := ?remark;
+          };
+        };
+        return {
+          code=1;
+          msg="未找到记录 id = " # Nat.toText(id);
+        };
+      };
+    }
+  };
+
+  public shared func receiveVftLogs(body:[VftLogParam],sign:Text): async Result  {
+      try{
+          var sign_array :[Text]= [];
+          let ids = Buffer.Buffer<Nat>(10);
+          for (item in body.vals()){
+            // uid,amount,customer_id,source_id,source_code,order_no,uid,amount.....
+            sign_array :=  Array.append<Text>(sign_array,[Nat.toText(item.uid),Int.toText(item.amount),Nat.toText(item.customer_id),item.source_code,item.order_no,Nat.toText(item.create_time)]);
+            ids.add(item.token_apply_id);
+          };
+          ignore LOGGER.log(#INFO,"token_apply_id",debug_show("签名出错"));
+          let check = SignUtil.check_sign(sign_array,sign,Config.SECRET_KEY);
+          if(not check){
+            //ignore LOGGER.log(#ERROR,"receiveVftLogs-error",debug_show("receiveVftLogs 错误 log=",Error.message(error)));
+            return {
+              code=501;
+              msg="签名错误";
+            };
+          };
+          for (item in body.vals()){
+              let buffer = Buffer.Buffer<Text>(10); // Creates a new Buffer
+              let res = VftTypes.dealVftLog(item,userTableMap,tokenPlanTaskTable,buffer);
+              ignore LOGGER.log(#INFO,"receiveVftLogs",debug_show("receiveVftLogs 计算vft过程 log=",Buffer.toText(buffer, func (x : Text) : Text { x })));
+              assert res.code == 200;
+          };
+          {
+                code=200;
+                msg="处理成功";
+          }
+      }catch(error:Error){
+          ignore LOGGER.log(#ERROR,"receiveVftLogs-error",debug_show("receiveVftLogs 错误 log=",Error.message(error)));
+          return {
+              code=500;
+              msg=Error.message(error);
+          };
+      }
+  };
+
+  public query func totalCount(): async Nat {
+    var total =0;
+    let emptySet = Set.Make<VftLog>(VftTypes.compareVftLog);
+    for (item in userTableMap.vals()){
+      total := total + emptySet.size(item.vft_logs);
+    };
+    total;
+  };
+  public query func test_show_user(uid:Nat): async ?{
+    logs : [VftLog];
+    amount : Int;
+  }  {
+      let user= userTableMap.get(uid);
+        switch(user){
+            case (null) {
+                return null;
+            };
+            case (?user) {
+              ?{
+                logs = VftTypes.setToArray(user.vft_logs);
+                amount = user.vft_balance;
+              }
+            };
+        }
+  };
+
+  public query func queryVftLogs(uid:Nat,start:Nat,end:Nat,sign:Text): async [VftLog]  {
+      try{
+        let check = SignUtil.check_sign([Nat.toText(uid),Nat.toText(start),Nat.toText(end)],sign,Config.SECRET_FRONTEND);
+        if(not check){
+          throw Error.reject("签名错误");
+        };
+        // check sign
+        let user= userTableMap.get(uid);
+        switch(user){
+            case (null) {
+                return [];
+            };
+            case (?user) {
+                Array.filter(VftTypes.setToArray(user.vft_logs),func(item:VftLog):Bool{item.create_time >= start and item.create_time <= end});
+            };
+        }
+      }catch(error:Error){
+          throw Error.reject(Error.message(error));
+      }
+  };
+  public shared func testCleanLog(uid:Nat): async Text  {
+      try{
+        if(uid ==0){
+          userTableMap :=HashMap.HashMap<Nat,User>(1000, Nat.equal, Hash.hash);
+          return "清理成功";
+        };
+        let user= userTableMap.get(uid);
+        switch(user){
+            case (null) {
+                return "没找到到用户";
+            };
+            case (?user) {
+                user.vft_logs := Set.Make<VftLog>(VftTypes.compareVftLog).empty();
+                user.vft_balance := 0;
+                return "清理成功";
+            };
+        }
+      }catch(error:Error){
+          throw Error.reject(Error.message(error));
+      }
+  };
+
+  public query func queryVftLogTime(uid:Nat,sign:Text): async [Text]  {
+      try{
+        let check = SignUtil.check_sign([Nat.toText(uid)],sign,Config.SECRET_FRONTEND);
+        if(not check){
+          throw Error.reject("签名错误");
+        };
+        // check sign
+        let user= userTableMap.get(uid);
+        switch(user){
+            case (null) {
+                return [];
+            };
+            case (?user) {
+                let arr = VftTypes.setToArray(user.vft_logs);
+                let natSet = Set.Make<Text>(Text.compare); // : Operations<Nat>
+                var set : Set.Set<Text> = natSet.empty();
+                for (item in arr.vals()){
+                  set := natSet.put(set,time.getMonth(item.create_time));
+                };
+                Iter.toArray(natSet.vals(set));
+            };
+        }
+      }catch(error:Error){
+          throw Error.reject(Error.message(error));
+      }
+  };
+
+
+  public shared ({caller}) func updateInternetIdentity(uid:Nat,pid:?Text,ic_account_id:?Text): async Result  {
+      try{
+        if(caller != Principal.fromText("r7inp-6aaaa-aaaaa-aaabq-cai")){
+          return {
+            code=501;
+            msg="只允许内部调用";
+          };
+        };
+        let user= userTableMap.get(uid);
+        switch(user){
+            case (null) {
+                return {
+                  code=501;
+                  msg="未找到记录 uid = " # Nat.toText(uid);
+                };
+            };
+            case (?user) {
+                user.pid := pid;
+                user.ic_account_id := ic_account_id;
+                return {
+                  code=200;
+                  msg="处理成功";
+                };
+            };
+        }
+      }catch(error:Error){
+          throw Error.reject(Error.message(error));
+      }
+  };
+
+
+
+
+  stable var admin_users : List.List<Principal> = List.nil();
+
+
+    // 获取管理员
+  public shared ({ caller }) func get_admin_users() : async List.List<Principal> {
+      if(not isAdmin(caller)){
+        throw Error.reject("You are not an administrator and cannot execute this function");
+      };
+      admin_users
+  };
+     // 增加管理员
+  public shared ({ caller }) func add_admin_user(user: Principal) : async () {
+      if(not Principal.isController(caller)){
+        throw Error.reject("You are not an administrator and cannot execute this function");
+      };
+      let admin = List.find<Principal>(admin_users, func (v) {Principal.toText(v) == Principal.toText(user)});
+      if(admin == null){
+        admin_users := List.push(user, admin_users);
+      };
+  };
+
+  // 删除管理员
+  public shared ({ caller }) func delete_admin_user(user: Principal) : async () {
+      if(not Principal.isController(caller)){
+        throw Error.reject("You are not an administrator and cannot execute this function");
+      };
+      admin_users := List.filter<Principal>(admin_users, func (v) {Principal.toText(v) != Principal.toText(user)});
+  };
+
+  // 判断是否是管理员
+  private func isAdmin(user: Principal): Bool{
+  let admin = List.find<Principal>(admin_users, func (v) {Principal.toText(v) == Principal.toText(user)});
+    if(admin != null or Principal.isController(user)) {
+        return true;
+    } else {
+        return false;
+    };
+  };
+
+
+
 
   system func preupgrade() {
     icp_transaction_second_entries := Iter.toArray(icp_transaction_second_logs.entries());
+    userTable := Iter.toArray(userTableMap.vals());
   };
 
   system func postupgrade() {
@@ -537,6 +966,13 @@ public shared func get_address() : async Text {
       Iter.fromArray<(Text, List.List<IcpTransactionSecondLogs>)>(icp_transaction_second_entries),
       Array.size(icp_transaction_second_entries),Text.equal,Text.hash);
     icp_transaction_second_entries := [];
+    userTableMap := HashMap.fromIter<Nat, User>(
+      Iter.fromArray(Array.map<User, (Nat, User)>(userTable,func (item:User):(Nat, User) { return (item.uid, item) })),
+      Array.size(userTable),
+      Nat.equal,
+      Hash.hash
+    );
+    userTable := [];
   };
 
 };
